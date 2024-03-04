@@ -1,4 +1,4 @@
-vim.opt.guicursor = ""
+vim.opt.guicursor = "i:ver25-iCursor"
 
 vim.opt.nu = true
 vim.opt.relativenumber = true
@@ -27,5 +27,3 @@ vim.opt.signcolumn = "yes"
 vim.opt.isfname:append("@-@")
 
 vim.opt.updatetime = 50
-
-
