@@ -72,6 +72,10 @@ return require('packer').startup(function()
     use { 'akinsho/bufferline.nvim', tag = "*", requires = 'nvim-tree/nvim-web-devicons' }
     use { "catppuccin/nvim", as = "catppuccin" }
     use 'nvim-lua/plenary.nvim'
-    use 'ThePrimeagen/harpoon'
+    use {
+        "ThePrimeagen/harpoon",
+        branch = "harpoon2",
+        requires = { { "nvim-lua/plenary.nvim" } }
+    }
     use { "alexghergh/nvim-tmux-navigation" }
 end)
