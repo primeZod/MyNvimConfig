@@ -20,6 +20,9 @@ return     {
                     f = { ":Telescope find_files<cr>", "Telescope Find File" },
                     g = { ":Telescope live_grep<cr>", "Telescope Live Grep" },
                     v = { ":NvimTreeToggle<cr>", "File structure view" },
+                    F = { "f<cr>", "Format document"},
+                    N = { ":bn<cr>", "Next buffer"},
+                    P = { ":bp<cr>", "Prev buffer"},
                 }
 
                 local tmux_mappings = {
