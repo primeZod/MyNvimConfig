@@ -1,108 +1,106 @@
 return {
-    "neovim/nvim-lspconfig",
-    dependencies = {
-        "williamboman/mason.nvim",
-        "williamboman/mason-lspconfig.nvim",
-        "hrsh7th/cmp-nvim-lsp",
-        "hrsh7th/cmp-buffer",
-        "hrsh7th/cmp-path",
-        "hrsh7th/cmp-cmdline",
-        "hrsh7th/nvim-cmp",
-        "L3MON4D3/LuaSnip",
-        "saadparwaiz1/cmp_luasnip",
-        "j-hui/fidget.nvim",
-    },
+  "neovim/nvim-lspconfig",
+  dependencies = {
+    "mason-org/mason.nvim",
+    "mason-org/mason-lspconfig.nvim",
+    "L3MON4D3/LuaSnip",
+    "j-hui/fidget.nvim",
+  },
 
-    config = function()
-        local cmp = require('cmp')
-        local cmp_lsp = require("cmp_nvim_lsp")
-        local capabilities = vim.tbl_deep_extend(
-            "force",
-            {},
-            vim.lsp.protocol.make_client_capabilities(),
-            cmp_lsp.default_capabilities())
+  config = function()
+    local lspconfig    = require("lspconfig")
+    local util         = require("lspconfig.util")
+    local blink        = require("blink.cmp")
+    local capabilities = blink.get_lsp_capabilities()
 
-        require("fidget").setup({})
-        require("mason").setup()
-        require("mason-lspconfig").setup({
-            ensure_installed = {
-                "lua_ls",
-                "rust_analyzer",
-                "tsserver",
-                "gopls"
-            },
-            handlers = {
-                function(server_name) -- default handler (optional)
-
-                    require("lspconfig")[server_name].setup {
-                        capabilities = capabilities
-                    }
-                end,
-
-                zls = function()
-                    local lspconfig = require("lspconfig")
-                    lspconfig.zls.setup({
-                        root_dir = lspconfig.util.root_pattern(".git", "build.zig", "zls.json"),
-                        settings = {
-                            zls = {
-                                enable_inlay_hints = true,
-                                enable_snippets = true,
-                                warn_style = true,
-                            },
-                        },
-                    })
-                    vim.g.zig_fmt_parse_errors = 0
-                    vim.g.zig_fmt_autosave = 0
-
-                end,
-                ["lua_ls"] = function()
-                    local lspconfig = require("lspconfig")
-                    lspconfig.lua_ls.setup {
-                        capabilities = capabilities,
-                        settings = {
-                            Lua = {
-                                diagnostics = {
-                                    globals = { "vim", "it", "describe", "before_each", "after_each" },
-                                }
-                            }
-                        }
-                    }
-                end,
-            }
-        })
-
-        local cmp_select = { behavior = cmp.SelectBehavior.Select }
-
-        cmp.setup({
-            snippet = {
-                expand = function(args)
-                    require('luasnip').lsp_expand(args.body) -- For `luasnip` users.
-                end,
-            },
-            mapping = cmp.mapping.preset.insert({
-                ['<C-p>'] = cmp.mapping.select_prev_item(cmp_select),
-                ['<C-n>'] = cmp.mapping.select_next_item(cmp_select),
-                ['<C-y>'] = cmp.mapping.confirm({ select = true }),
-                ["<C-Space>"] = cmp.mapping.complete(),
-            }),
-            sources = cmp.config.sources({
-                { name = 'nvim_lsp' },
-                { name = 'luasnip' }, -- For luasnip users.
-            }, {
-                { name = 'buffer' },
-            })
-        })
-
-        vim.diagnostic.config({
-            -- update_in_insert = true,
-            float = {
-                focusable = false,
-                style = "minimal",
-                border = "rounded",
-                source = "always",
-                header = "",
-                prefix = "",
-            },
-        })
+    local function on_attach(client, buf)
+      vim.notify("LSP attached: " .. client.name .. " → " .. vim.api.nvim_buf_get_name(buf))
     end
+
+    require("fidget").setup({})
+    require("mason").setup({
+      ui = { border = "rounded" },
+    })
+
+    -- Helper: attach capabilities and any common opts
+    local function setup(server, opts)
+      opts = opts or {}
+      opts.capabilities = vim.tbl_deep_extend("force", {}, capabilities, opts.capabilities or {})
+      lspconfig[server].setup(opts)
+    end
+
+    require("mason-lspconfig").setup({
+      ensure_installed = {
+        "lua_ls",
+        "svelte",
+        -- "ts_ls",
+        "gopls",
+        -- "zls"   -- enable if you use Zig
+      },
+      handlers = {
+        -- default
+        function(server_name)
+          setup(server_name, {})
+        end,
+
+        -- Zig
+        zls = function()
+          setup("zls", {
+            root_dir = util.root_pattern(".git", "build.zig", "zls.json"),
+            settings = {
+              zls = {
+                enable_inlay_hints = true,
+                enable_snippets = true,
+                warn_style = true,
+              },
+            },
+          })
+          vim.g.zig_fmt_parse_errors = 0
+          vim.g.zig_fmt_autosave = 0
+        end,
+
+        -- Lua
+        lua_ls = function()
+          setup("lua_ls", {
+            settings = {
+              Lua = {
+                diagnostics = { globals = { "vim", "it", "describe", "before_each", "after_each" } },
+                workspace = { checkThirdParty = false },
+                completion = { callSnippet = "Replace" },
+              },
+            },
+          })
+        end,
+
+        -- TypeScript and JavaScript
+        -- ts_ls = function()
+        --   setup("ts_ls", {
+        --     cmd = { vim.fn.stdpath("data") .. "/mason/bin/typescript-language-server", "--stdio" },
+        --     on_attach = on_attach,
+        --     root_dir = util.root_pattern("tsconfig.json", "package.json", ".git"),
+        --     filetypes = { "typescript", "typescriptreact", "javascript", "javascriptreact" },
+        --     single_file_support = true,
+        --   })
+        -- end,
+
+        -- Svelte (disable eslint LSP auto-start unless you want it)
+        svelte = function()
+          -- optional: keep eslint off by default
+          pcall(function() lspconfig.eslint.setup({ autostart = false }) end)
+          setup("svelte", {})
+        end,
+      },
+    })
+
+    vim.diagnostic.config({
+      float = {
+        focusable = false,
+        style = "minimal",
+        border = "rounded",
+        source = "always",
+        header = "",
+        prefix = "",
+      },
+    })
+  end,
 }

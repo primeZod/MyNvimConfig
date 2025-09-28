@@ -17,6 +17,8 @@ return {
         html = { "prettier" },
         markdown = { "prettier" },
         yaml = { "prettier" },
+        python = { "ruff_format" },
+        svelte = { "prettier" },
         -- add other filetypes as needed
       },
     })
