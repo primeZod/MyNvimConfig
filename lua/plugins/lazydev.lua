@@ -13,6 +13,28 @@ return {
   { -- optional blink completion source for require statements and module annotations
     "saghen/blink.cmp",
     opts = {
+      completion = {
+        accept = {
+          auto_brackets = {
+            enabled = true,
+            semantic_token_resolution = {
+              enabled = true
+            }
+          },
+        },
+        documentation = {
+          auto_show = true,
+          auto_show_delay_ms = 500
+        },
+        kind = {
+          width = { fill = true },
+          text = function(ctx) return ctx.kind end,
+          highlight = function(ctx) return ctx.kind_hl end,
+        },
+        list = {
+          selection = { preselect = true, auto_insert = true }
+        }
+      },
       sources = {
         -- add lazydev to your completion providers
         default = { "lazydev", "lsp", "path", "snippets", "buffer" },
@@ -25,6 +47,8 @@ return {
           },
         },
       },
+      signature = { enabled = true },
+      fuzzy = { implementation = "prefer_rust_with_warning" }
     },
   }
   -- { "folke/neodev.nvim", enabled = false }, -- make sure to uninstall or disable neodev.nvim
